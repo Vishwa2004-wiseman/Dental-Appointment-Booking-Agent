@@ -8,7 +8,7 @@
  * "when a booking is confirmed, create the calendar event and text the patient."
  */
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const flow = require('../state/flow');
 const firestore = require('./firestore');
 const calendar = require('./calendar');
@@ -60,7 +60,7 @@ async function handleTurn({ callId, userInput, phone, clinicId }) {
  * Isolated so a failure here can be retried without re-running the whole flow.
  */
 async function fulfilBooking(session) {
-  const bookingId = uuidv4();
+  const bookingId = randomUUID();
 
   const event = await calendar.createEvent({
     patientName: session.patientName,
