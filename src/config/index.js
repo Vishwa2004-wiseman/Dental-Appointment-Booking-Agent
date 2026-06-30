@@ -11,7 +11,9 @@
  * clone runs end-to-end (`npm run simulate`) with zero setup.
  */
 
-require('dotenv').config();
+// Load .env if dotenv is installed. It's optional: in production (Railway)
+// env vars are injected directly, and tests run without node_modules.
+try { require('dotenv').config(); } catch (_) { /* dotenv not installed — fine */ }
 
 function bool(value, fallback = false) {
   if (value === undefined || value === null || value === '') return fallback;
