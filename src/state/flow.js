@@ -76,6 +76,7 @@ function formatWhen(iso) {
 // -- Slot extraction (intentionally simple — see "corners cut" in README) --
 
 function extractName(text) {
+  // FIXME: '...' (punctuation only) currently passes as a valid name — test-flow failing
   if (!text) return null;
   const cleaned = String(text).trim();
   const m = cleaned.match(/(?:my name is|this is|it'?s|i am|i'm)\s+([a-z][a-z .'-]+)/i);
