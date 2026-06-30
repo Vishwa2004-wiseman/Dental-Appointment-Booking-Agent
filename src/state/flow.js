@@ -76,12 +76,12 @@ function formatWhen(iso) {
 // -- Slot extraction (intentionally simple — see "corners cut" in README) --
 
 function extractName(text) {
-  // FIXME: '...' (punctuation only) currently passes as a valid name — test-flow failing
   if (!text) return null;
   const cleaned = String(text).trim();
   const m = cleaned.match(/(?:my name is|this is|it'?s|i am|i'm)\s+([a-z][a-z .'-]+)/i);
   const candidate = (m ? m[1] : cleaned).replace(/[^a-zA-Z .'-]/g, ' ').trim();
   if (!candidate) return null;
+  if (!/[a-z]/i.test(candidate)) return null; // must contain at least one letter
   return candidate
     .split(/\s+/).slice(0, 3)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
