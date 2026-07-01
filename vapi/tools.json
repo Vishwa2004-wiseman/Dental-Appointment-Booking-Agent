@@ -1,0 +1,60 @@
+[
+  {
+    "type": "function",
+    "server": { "url": "{{BASE_URL}}/webhooks/vapi" },
+    "function": {
+      "name": "collect_patient_info",
+      "description": "Record the caller's full name (and phone if given). Call as soon as the patient states their name.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "description": "Patient full name" },
+          "phone": { "type": "string", "description": "E.164 phone number if provided" }
+        },
+        "required": ["name"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "server": { "url": "{{BASE_URL}}/webhooks/vapi" },
+    "function": {
+      "name": "select_service",
+      "description": "Record the dental service the patient wants.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "service": {
+            "type": "string",
+            "enum": ["cleaning", "checkup", "filling", "extraction", "whitening", "root canal", "emergency", "consultation"]
+          }
+        },
+        "required": ["service"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "server": { "url": "{{BASE_URL}}/webhooks/vapi" },
+    "function": {
+      "name": "select_datetime",
+      "description": "Record the requested appointment date and time as an ISO 8601 string or natural language (e.g. 'tomorrow at 3pm').",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dateTime": { "type": "string", "description": "Requested date/time" }
+        },
+        "required": ["dateTime"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "server": { "url": "{{BASE_URL}}/webhooks/vapi" },
+    "function": {
+      "name": "confirm_booking",
+      "description": "Finalize the booking after the patient confirms. Triggers the Google Calendar event and the Twilio SMS.",
+      "parameters": { "type": "object", "properties": {}, "required": [] }
+    }
+  }
+]

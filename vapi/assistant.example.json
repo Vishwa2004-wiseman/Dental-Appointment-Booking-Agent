@@ -1,0 +1,14 @@
+{
+  "name": "Dental Clinic Receptionist",
+  "firstMessage": "Thanks for calling the dental clinic. May I have your full name, please?",
+  "serverUrl": "{{BASE_URL}}/webhooks/vapi",
+  "serverMessages": ["tool-calls", "conversation-update", "end-of-call-report", "status-update"],
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "systemPrompt": "You are a friendly dental clinic receptionist. Book appointments by collecting, in order: the patient's name, the service they need, and the date/time. Then read the details back and ask them to confirm. As each detail is provided, call the matching tool: collect_patient_info, select_service, select_datetime, and finally confirm_booking once the patient says yes. Keep replies short and natural for a phone call.",
+    "tools": []
+  },
+  "voice": { "provider": "11labs", "voiceId": "rachel" },
+  "_note": "Paste the entries from vapi/tools.json into model.tools, and replace {{BASE_URL}} with your deployed URL."
+}
