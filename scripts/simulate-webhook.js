@@ -3,22 +3,27 @@
 /**
  * Local end-to-end simulation — no VAPI, no cloud needed.
  *
- * Boots the Express app in-process (mock mode auto-engages without creds),
- * then fires a sequence of VAPI-shaped `conversation-update` webhooks that
- * walk a full booking: name → service → date/time → confirm.
- *
- * Finally it hits the admin API to prove the booking + session were persisted.
+ * Boots the Express app in-process (mock mode) and fires a sequence of
+ * VAPI-shaped `conversation-update` webhooks that walk a full booking:
+ * name -> service -> date/time -> confirm. Then it hits the admin API to prove
+ * the booking + session were persisted.
  *
  * Run:  npm run simulate
  */
 
+// Run with zero setup: enable mock mode and a demo admin key BEFORE anything
+// loads config (config reads env once, at require time). Admin endpoints are
+// fail-closed — they refuse requests unless ADMIN_API_KEY is set — so the demo
+// provides one here.
+process.env.MOCK_MODE = process.env.MOCK_MODE || 'true';
+process.env.ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'sim-admin-key';
+
 const http = require('http');
 const { createApp, initServices } = require('../src/index');
-const { config } = require('../src/config');
 
 const CALL_ID = `sim-call-${Date.now()}`;
 const PHONE = '+15551234567';
-const ADMIN_KEY = config.admin.apiKey || 'change-me-please';
+const ADMIN_KEY = process.env.ADMIN_API_KEY;
 
 function conversationUpdate(text) {
   return {
@@ -30,12 +35,8 @@ function conversationUpdate(text) {
   };
 }
 
-function post(server, path, body, headers = {}) {
-  return request(server, 'POST', path, body, headers);
-}
-function get(server, path, headers = {}) {
-  return request(server, 'GET', path, null, headers);
-}
+function post(server, path, body, headers = {}) { return request(server, 'POST', path, body, headers); }
+function get(server, path, headers = {}) { return request(server, 'GET', path, null, headers); }
 
 function request(server, method, path, body, headers) {
   return new Promise((resolve, reject) => {
@@ -63,9 +64,7 @@ function request(server, method, path, body, headers) {
   });
 }
 
-function line(label, value) {
-  console.log(`  ${label.padEnd(14)} ${value}`);
-}
+function line(label, value) { console.log(`  ${label.padEnd(14)} ${value}`); }
 
 async function main() {
   console.log('\n🦷  Dental Booking Agent — end-to-end simulation\n');
@@ -91,7 +90,6 @@ async function main() {
     'tomorrow at 3pm please',
     'yes that sounds good',
   ];
-
   console.log('▶ Conversation');
   for (const t of turns) {
     const r = await post(server, '/webhooks/vapi', conversationUpdate(t));
@@ -101,7 +99,12 @@ async function main() {
 
   // 2) Verify session persisted with full state history
   const sessionRes = await get(server, `/admin/sessions/${CALL_ID}`, { 'x-admin-key': ADMIN_KEY });
-  const session = sessionRes.body.session;
+  const session = sessionRes.body && sessionRes.body.session;
+  if (!session) {
+    console.error(`✗ admin/sessions returned ${sessionRes.status}:`, JSON.stringify(sessionRes.body));
+    server.close();
+    process.exit(1);
+  }
   console.log('▶ Session in store');
   line('callId', session.callId);
   line('stage', session.stage);
@@ -141,7 +144,6 @@ async function main() {
     ['sms sid present', Boolean(b && b.twilioSid)],
     ['state history recorded', session.stateHistory.length >= 4],
   ];
-
   console.log('▶ Checks');
   let failed = 0;
   for (const [name, pass] of checks) {
@@ -151,16 +153,9 @@ async function main() {
   console.log();
 
   server.close();
-
-  if (failed) {
-    console.error(`❌ ${failed} check(s) failed\n`);
-    process.exit(1);
-  }
+  if (failed) { console.error(`❌ ${failed} check(s) failed\n`); process.exit(1); }
   console.log('✅ All checks passed — full booking flow works end-to-end.\n');
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error('Simulation crashed:', err);
-  process.exit(1);
-});
+main().catch((err) => { console.error('Simulation crashed:', err); process.exit(1); });
