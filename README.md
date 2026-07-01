@@ -181,7 +181,8 @@ dental-booking-agent/
 │   │   ├── sms.js          # Twilio
 │   │   └── firestore.js    # persistence + queries (mock fallback)
 │   ├── state/
-│   │   └── flow.js         # pure state machine: name → service → datetime → confirm
+│   │   ├── flow.js         # pure state machine: name → service → datetime → confirm
+│   │   └── datetime.js     # NLP date parsing (chrono-node + rule-based fallback)
 │   └── middleware/
 │       └── errorHandler.js
 ├── scripts/

@@ -12,6 +12,8 @@
  *                 -> COMPLETED | CANCELLED
  */
 
+const { parseDateTime } = require('./datetime');
+
 const STAGES = Object.freeze({
   AWAITING_NAME: 'AWAITING_NAME',
   AWAITING_SERVICE: 'AWAITING_SERVICE',
@@ -73,7 +75,7 @@ function formatWhen(iso) {
   });
 }
 
-// -- Slot extraction (intentionally simple — see "corners cut" in README) --
+// -- Slot extraction (name/service are lightweight; date/time uses NLP) --
 
 function extractName(text) {
   if (!text) return null;
@@ -101,56 +103,14 @@ function extractService(text) {
 }
 
 /**
- * Small natural-date parser: ISO strings, "tomorrow at 3pm", "next monday 10am",
- * plain "3pm". Returns an ISO string or null.
+ * Natural-language date/time parsing. Delegates to the NLP parser in
+ * ./datetime (chrono-node when installed, rule-based fallback otherwise).
+ * Understands "tomorrow at 3pm", "next Friday afternoon", "in two days",
+ * "July 5th at 9", "half past two", plain "3pm", ISO strings, etc.
+ * Returns an ISO string or null.
  */
 function extractDateTime(text, now = new Date()) {
-  if (!text) return null;
-  const raw = String(text).trim();
-
-  const direct = new Date(raw);
-  if (!Number.isNaN(direct.getTime()) && /\d{4}-\d{2}-\d{2}/.test(raw)) {
-    return direct.toISOString();
-  }
-
-  const lower = raw.toLowerCase();
-  const base = new Date(now);
-  base.setSeconds(0, 0);
-
-  let dayOffset = null;
-  if (/\btoday\b/.test(lower)) dayOffset = 0;
-  else if (/\btomorrow\b/.test(lower)) dayOffset = 1;
-
-  const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const wdIdx = weekdays.findIndex((d) => lower.includes(d));
-  if (wdIdx >= 0) {
-    const cur = base.getDay();
-    let delta = (wdIdx - cur + 7) % 7;
-    if (delta === 0) delta = 7;
-    dayOffset = delta;
-  }
-
-  let hour = null;
-  let minute = 0;
-  const t = lower.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
-  if (t) {
-    hour = parseInt(t[1], 10);
-    minute = t[2] ? parseInt(t[2], 10) : 0;
-    const ampm = t[3];
-    if (ampm === 'pm' && hour < 12) hour += 12;
-    if (ampm === 'am' && hour === 12) hour = 0;
-  }
-
-  if (dayOffset === null && hour === null) return null;
-
-  const result = new Date(base);
-  if (dayOffset !== null) result.setDate(result.getDate() + dayOffset);
-  if (hour !== null) result.setHours(hour, minute, 0, 0);
-  else result.setHours(10, 0, 0, 0);
-
-  if (dayOffset === null && result <= now) result.setDate(result.getDate() + 1);
-
-  return result.toISOString();
+  return parseDateTime(text, now);
 }
 
 function isAffirmative(text) {

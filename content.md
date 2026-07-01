@@ -318,8 +318,9 @@ secrets. Only `.env.example` is tracked. `.gitignore` already covers
    `VAPI_WEBHOOK_SECRET`; enable in production.
 2. **Single clinic via `CLINIC_ID` env var** — data model is multi-tenant
    (`clinicId` on every doc) but there's no clinic-management UI.
-3. **Simple string parsing for slots** instead of full NLP — real deployments
-   should let VAPI tool-calls supply structured arguments.
+3. **Name/service slots use lightweight matching** — real deployments should
+   also let VAPI tool-calls supply structured arguments. (Date/time now uses a
+   proper NLP parser — `chrono-node`, with a rule-based fallback.)
 4. **Admin API-key auth only** — no OAuth admin dashboard.
 
 ---

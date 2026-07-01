@@ -1,7 +1,7 @@
 {
   "name": "dental-booking-agent",
   "version": "1.0.0",
-  "description": "Backend for an AI dental receptionist \u2014 handles VAPI call webhooks, a multi-turn booking state machine, Google Calendar, Twilio SMS, and Firestore logging.",
+  "description": "Backend for an AI dental receptionist — handles VAPI call webhooks, a multi-turn booking state machine, Google Calendar, Twilio SMS, and Firestore logging.",
   "main": "src/index.js",
   "type": "commonjs",
   "engines": {
@@ -27,6 +27,7 @@
   "author": "Sargunam",
   "license": "MIT",
   "dependencies": {
+    "chrono-node": "^2.7.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "firebase-admin": "^12.3.1",
