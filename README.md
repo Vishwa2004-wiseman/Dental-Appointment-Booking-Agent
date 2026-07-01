@@ -12,9 +12,14 @@ persist every turn, then create the calendar event and text a confirmation.
 
 ## Live demo
 
-- **Base URL:** `https://your-app.up.railway.app` _(update after deploy)_
-- **Health check:** `GET /health`
+- **Live app (booking dashboard):** https://web-production-62aa6.up.railway.app
+- **Health check:** https://web-production-62aa6.up.railway.app/health
+- **Live data (bookings + sessions):** https://web-production-62aa6.up.railway.app/api/summary
 - **Loom walkthrough:** _paste link here_
+
+The deployed app books into a real Google Calendar, sends Twilio SMS confirmations
+(test credentials), logs every session to Firestore, and serves a web dashboard to
+create and review appointments.
 
 ---
 
