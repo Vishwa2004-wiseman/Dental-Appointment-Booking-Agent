@@ -124,17 +124,33 @@ curl -H "X-Admin-Key: $ADMIN_API_KEY" https://your-app.up.railway.app/admin/book
 ## Testing locally
 
 ```bash
-node scripts/test-flow.js   # 25 zero-dependency assertions over the state machine + orchestrator
-npm run simulate            # boots the app and drives a full VAPI-shaped conversation
+npm test          # 36 zero-dependency assertions: state machine, VAPI parsing, orchestrator, tool-calls, cancel
+npm run simulate  # boots the app and drives a full VAPI-shaped conversation
 ```
+
+CI runs `npm test` on every push (`.github/workflows/ci.yml`).
 
 ---
 
-## Deployment (Railway)
+## Deployment
 
-1. Push this repo to GitHub.
-2. Railway → **New Project → Deploy from GitHub repo**; add all `.env` vars in the service settings.
-3. Railway builds with Nixpacks and runs `npm start`. `railway.json` sets the `/health` healthcheck. Copy the public domain into `BASE_URL` and into your VAPI assistant's server URL.
+The repo ships deploy configs for every platform the assignment allows, plus Docker:
+
+| Platform | Config | Notes |
+|----------|--------|-------|
+| **Railway** | `railway.json`, `Procfile` | New Project → Deploy from GitHub repo → add env vars |
+| **Render** | `render.yaml` | New → Blueprint → point at the repo; set secret env vars |
+| **Vercel** | `vercel.json` + `api/index.js` | Serverless wrapper around the Express app |
+| **Docker** | `Dockerfile`, `.dockerignore` | `docker build -t dba . && docker run -p 3000:3000 --env-file .env dba` |
+
+On the graded deploy set every credential and **`MOCK_MODE=false`**, then confirm
+`GET /health` reports `firestore: live`, `calendar: live`, `sms: live`. Copy the
+public domain into `BASE_URL` and into your VAPI assistant's Server URL.
+
+### Wiring VAPI
+Ready-to-paste assistant + tool definitions live in [`vapi/`](vapi/), and real
+webhook envelopes for `curl`/Postman live in [`sample-payloads/`](sample-payloads/).
+Run `npm run smoke` (with `BASE_URL` set) to exercise the deployed URL end-to-end.
 
 ---
 
@@ -163,10 +179,18 @@ dental-booking-agent/
 │   │   └── flow.js         # pure state machine: name → service → datetime → confirm
 │   └── middleware/
 │       └── errorHandler.js
-└── scripts/
-    ├── simulate-webhook.js # local end-to-end without VAPI
-    └── test-flow.js        # zero-dependency logic tests
+├── scripts/
+│   ├── simulate-webhook.js # local end-to-end without VAPI
+│   ├── test-flow.js        # 36 zero-dependency tests (npm test)
+│   └── smoke-live.sh       # end-to-end smoke test against a deployed URL
+├── vapi/                   # assistant + tool definitions to paste into VAPI
+├── sample-payloads/        # real VAPI webhook envelopes for curl/Postman
+├── api/index.js            # Vercel serverless entry
+├── Dockerfile · render.yaml · vercel.json · railway.json · Procfile
+└── .github/workflows/ci.yml
 ```
+
+`src/vapi/parse.js` holds the pure, unit-tested envelope parsing used by the webhook.
 
 ---
 
