@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dental Clinic — Appointment Booking</title>
+<style>
+  :root{--brand:#4f46e5;--brand2:#7c3aed;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--ok:#16a34a}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f1f5f9;color:var(--ink)}
+  header{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff;padding:26px 20px 64px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  header h1{margin:0;font-size:26px;display:flex;gap:10px;align-items:center}
+  header p{margin:6px 0 0;opacity:.92;font-size:14px;max-width:640px}
+  .status{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);padding:7px 13px;border-radius:999px;font-size:13px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cbd5e1}
+  .dot.live{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+  .dot.mock{background:#f59e0b}
+  main{max-width:1080px;margin:-46px auto 60px;padding:0 20px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(2,6,23,.06);padding:22px;margin-bottom:22px}
+  .card h2{margin:0 0 4px;font-size:18px;display:flex;gap:8px;align-items:center}
+  .card .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/-1}
+  label{font-size:13px;font-weight:600;color:#334155}
+  input,select{font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  input:focus,select:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+  .hint{font-size:12px;color:var(--muted)}
+  .btn{font:inherit;border:0;border-radius:10px;padding:12px 18px;cursor:pointer;font-weight:700}
+  .btn-primary{background:var(--brand);color:#fff;font-size:15px}
+  .btn-primary:hover{background:#4338ca}.btn-primary:disabled{opacity:.6;cursor:default}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+  .err{background:#fee2e2;color:#991b1b;border-radius:10px;padding:10px 12px;font-size:14px;margin-top:12px;display:none}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .stat .n{font-size:30px;font-weight:800;line-height:1}
+  .stat .l{color:var(--muted);font-size:12px;margin-top:6px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:2px 0 12px}
+  .toolbar h2{margin:0;font-size:18px}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:13px 16px;font-size:14px;border-bottom:1px solid var(--line)}
+  th{background:#f8fafc;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:0}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+  .b-confirmed,.b-completed{background:#dcfce7;color:#166534}
+  .b-awaiting{background:#fef3c7;color:#92400e}.b-cancelled{background:#fee2e2;color:#991b1b}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+  .empty{padding:30px;text-align:center;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .sess{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff}
+  .sess h4{margin:0 0 4px;font-size:15px}
+  .foot{color:var(--muted);font-size:12px;text-align:center;margin-top:12px}
+  @media(max-width:720px){.form,.grid2{grid-template-columns:1fr}}
+  .overlay{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:18px;max-width:420px;width:100%;padding:26px;text-align:center;box-shadow:0 20px 60px rgba(2,6,23,.3)}
+  .tick{width:64px;height:64px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 12px}
+  .modal h3{margin:0 0 4px;font-size:20px}
+  .modal .who{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .rows{text-align:left;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px}
+  .rows div{display:flex;justify-content:space-between;padding:5px 0;font-size:14px}
+  .rows .k{color:var(--muted)}
+  .confirm-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .cp{background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>🦷 Bright Smile Dental — Booking Desk</h1>
+    <p>Book a patient appointment below. Behind the scenes it saves to the database, adds a Google Calendar event, and sends an SMS confirmation — the same thing our AI voice agent does when a patient phones in.</p>
+    <div class="status">
+      <span class="pill"><span class="dot" id="dot-fs"></span> Database</span>
+      <span class="pill"><span class="dot" id="dot-cal"></span> Google Calendar</span>
+      <span class="pill"><span class="dot" id="dot-sms"></span> SMS</span>
+      <span class="pill" id="pill-time">—</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="card">
+    <h2>📝 Book a new appointment</h2>
+    <p class="sub">Fill this in like a front-desk receptionist would, then click Book.</p>
+    <div class="form">
+      <div class="field"><label>Patient name</label><input id="f-name" placeholder="e.g. Priya Sharma" /></div>
+      <div class="field"><label>Service</label>
+        <select id="f-service">
+          <option>cleaning</option><option>checkup</option><option>filling</option>
+          <option>extraction</option><option>whitening</option><option>root canal</option>
+          <option>emergency</option><option>consultation</option>
+        </select>
+      </div>
+      <div class="field"><label>Date &amp; time</label><input id="f-when" type="datetime-local" /></div>
+      <div class="field"><label>Phone (for SMS)</label><input id="f-phone" value="+15005550006" />
+        <span class="hint">Pre-filled with Twilio's test number. Real numbers need a paid Twilio account.</span>
+      </div>
+      <div class="field full">
+        <button class="btn btn-primary" id="btn-book" onclick="book()">📅 Book appointment</button>
+      </div>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div class="cards">
+    <div class="stat"><div class="n" id="s-bookings">0</div><div class="l">Bookings</div></div>
+    <div class="stat"><div class="n" id="s-sessions">0</div><div class="l">Call Sessions</div></div>
+    <div class="stat"><div class="n" id="s-completed">0</div><div class="l">Completed</div></div>
+    <div class="stat"><div class="n" id="s-active">0</div><div class="l">In Progress</div></div>
+  </div>
+
+  <div class="toolbar"><h2>📅 Appointments</h2><button class="btn btn-ghost" onclick="load()">↻ Refresh</button></div>
+  <table>
+    <thead><tr><th>Patient</th><th>Service</th><th>When</th><th>Status</th><th>Calendar</th><th>SMS</th></tr></thead>
+    <tbody id="bookings"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+  </table>
+
+  <div class="toolbar" style="margin-top:26px"><h2>💬 Call Sessions</h2></div>
+  <div id="sessions"><div class="empty">Loading…</div></div>
+
+  <div class="foot">Auto-refreshes every 10s · AI dental receptionist — VAPI · Firestore · Google Calendar · Twilio</div>
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="tick">✓</div>
+    <h3>Appointment booked!</h3>
+    <p class="who" id="m-who">—</p>
+    <div class="rows">
+      <div><span class="k">Service</span><span id="m-service">—</span></div>
+      <div><span class="k">When</span><span id="m-when">—</span></div>
+    </div>
+    <div class="confirm-pills">
+      <span class="cp" id="m-cal">📅 Calendar event created</span>
+      <span class="cp" id="m-sms">💬 SMS sent</span>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="closeModal()">Done</button>
+  </div>
+</div>
+
+<script>
+  const $=(id)=>document.getElementById(id);
+  function fmt(iso){ if(!iso) return '—'; const d=new Date(iso); return isNaN(d)?iso:d.toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
+  function shortId(s){ return s? String(s).slice(0,10)+'…':'—'; }
+  function setDot(id,v){ $(id).className='dot '+(v==='live'?'live':'mock'); }
+  function badge(s){ s=(s||'').toLowerCase(); const c=s==='confirmed'||s==='completed'?'b-completed':s==='cancelled'?'b-cancelled':'b-awaiting'; return '<span class="badge '+c+'">'+(s||'—')+'</span>'; }
+
+  async function load(){
+    try{
+      const d = await (await fetch('/api/summary')).json();
+      const h=d.health||{};
+      setDot('dot-fs',h.firestore); setDot('dot-cal',h.calendar); setDot('dot-sms',h.sms);
+      $('pill-time').textContent='Updated '+new Date().toLocaleTimeString();
+      renderBookings(d.bookings||[]); renderSessions(d.sessions||[]);
+    }catch(e){ console.error(e); }
+  }
+  function renderBookings(list){
+    $('s-bookings').textContent=list.length;
+    const b=$('bookings');
+    if(!list.length){ b.innerHTML='<tr><td colspan="6" class="empty">No appointments yet — book one above ☝️</td></tr>'; return; }
+    b.innerHTML=list.map(x=>`<tr>
+      <td><strong>${x.patientName||'—'}</strong></td>
+      <td style="text-transform:capitalize">${x.service||'—'}</td>
+      <td>${fmt(x.startTime)}</td>
+      <td>${badge(x.status)}</td>
+      <td class="mono">${shortId(x.googleEventId)}</td>
+      <td class="mono">${shortId(x.twilioSid)}</td></tr>`).join('');
+  }
+  function renderSessions(list){
+    $('s-sessions').textContent=list.length;
+    $('s-completed').textContent=list.filter(s=>s.stage==='COMPLETED').length;
+    $('s-active').textContent=list.filter(s=>s.stage&&s.stage.startsWith('AWAITING')).length;
+    const el=$('sessions');
+    if(!list.length){ el.innerHTML='<div class="empty">No call sessions yet.</div>'; return; }
+    el.innerHTML='<div class="grid2">'+list.map(s=>`<div class="sess">
+      <h4>${s.patientName||'(unknown caller)'} ${badge(s.stage)}</h4>
+      <div class="mono">call ${s.callId}</div>
+      <div style="margin-top:6px;font-size:14px">Service: <strong style="text-transform:capitalize">${s.service||'—'}</strong> · ${fmt(s.dateTime)} · ${s.turns||0} turns</div>
+    </div>`).join('')+'</div>';
+  }
+
+  async function book(){
+    $('err').style.display='none';
+    const name=$('f-name').value.trim();
+    const service=$('f-service').value;
+    const when=$('f-when').value;
+    const phone=$('f-phone').value.trim();
+    if(!name){ showErr('Please enter the patient name.'); return; }
+    if(!when){ showErr('Please pick a date and time.'); return; }
+    const btn=$('btn-book'); btn.disabled=true; btn.textContent='Booking…';
+    try{
+      const res=await fetch('/api/book',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name,service,when,phone})});
+      const data=await res.json();
+      if(!data.ok){ showErr(data.error||'Something went wrong.'); }
+      else{ showModal(data.booking); $('f-name').value=''; await load(); }
+    }catch(e){ showErr('Could not reach the server.'); }
+    btn.disabled=false; btn.textContent='📅 Book appointment';
+  }
+  function showErr(m){ const e=$('err'); e.textContent='⚠️ '+m; e.style.display='block'; }
+  function showModal(b){
+    $('m-who').textContent=b.patientName||'';
+    $('m-service').textContent=b.service||'—';
+    $('m-when').textContent=fmt(b.startTime);
+    const smsOk=b.twilioSid && !String(b.twilioSid).startsWith('mock');
+    $('m-cal').textContent = (b.googleEventId && !String(b.googleEventId).startsWith('mock')) ? '📅 Added to Google Calendar' : '📅 Calendar (mock)';
+    $('m-sms').textContent = smsOk ? '💬 SMS confirmation sent' : '💬 SMS logged';
+    $('overlay').classList.add('show');
+  }
+  function closeModal(){ $('overlay').classList.remove('show'); }
+  $('overlay').addEventListener('click',(e)=>{ if(e.target.id==='overlay') closeModal(); });
+
+  // default date/time = tomorrow 15:00
+  (function(){ const d=new Date(); d.setDate(d.getDate()+1); d.setHours(15,0,0,0);
+    const pad=(n)=>String(n).padStart(2,'0');
+    $('f-when').value=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; })();
+  load(); setInterval(load,10000);
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@
 
 const express = require('express');
 const firestore = require('../services/firestore');
+const conversation = require('../services/conversation');
 const { config } = require('../config');
 
 const router = express.Router();
@@ -61,6 +62,24 @@ router.get('/sessions/:callId', async (req, res, next) => {
     const session = await firestore.getSession(req.params.callId);
     if (!session) return res.status(404).json({ error: 'session_not_found' });
     res.json({ session });
+  } catch (err) { next(err); }
+});
+
+// POST /admin/demo-booking — create a sample booking end-to-end (calendar + SMS).
+// Handy for the dashboard button and live demos.
+router.post('/demo-booking', async (req, res, next) => {
+  try {
+    const names = ['Priya Sharma', 'Alex Rivera', 'Sam Lee', 'Maria Gomez', 'John Carter', 'Aisha Khan'];
+    const services = ['cleaning', 'checkup', 'filling', 'whitening'];
+    const name = names[Math.floor(Math.random() * names.length)];
+    const service = services[Math.floor(Math.random() * services.length)];
+    const phone = (req.body && req.body.phone) || '+15005550006';
+    const callId = 'demo-' + Date.now();
+    await conversation.handleTurn({ callId, userInput: 'my name is ' + name, phone });
+    await conversation.handleTurn({ callId, userInput: service, phone });
+    await conversation.handleTurn({ callId, userInput: 'tomorrow at 2pm', phone });
+    const r = await conversation.handleTurn({ callId, userInput: 'yes', phone });
+    res.json({ ok: true, stage: r.stage, booking: r.booking });
   } catch (err) { next(err); }
 });
 

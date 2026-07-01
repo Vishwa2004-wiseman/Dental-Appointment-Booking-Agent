@@ -69,12 +69,20 @@ async function fulfilBooking(session) {
     phone: session.phone,
   });
 
-  const text = await sms.sendConfirmation({
-    to: session.phone,
-    patientName: session.patientName,
-    service: session.service,
-    dateTime: session.dateTime,
-  });
+  // SMS is best-effort: a Twilio error (e.g. an unverified number in trial/test
+  // mode) must not fail the whole booking. The calendar event is the source of truth.
+  let text;
+  try {
+    text = await sms.sendConfirmation({
+      to: session.phone,
+      patientName: session.patientName,
+      service: session.service,
+      dateTime: session.dateTime,
+    });
+  } catch (err) {
+    console.error('[conversation] SMS failed (non-fatal):', err.message);
+    text = { sid: null, error: err.message };
+  }
 
   const booking = await firestore.createBooking({
     bookingId,

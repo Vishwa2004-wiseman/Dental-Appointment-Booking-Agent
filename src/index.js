@@ -8,6 +8,7 @@
  */
 
 const express = require('express');
+const path = require('path');
 const { config, summary } = require('./config');
 
 const firestore = require('./services/firestore');
@@ -16,6 +17,7 @@ const sms = require('./services/sms');
 
 const webhookRouter = require('./routes/webhook');
 const adminRouter = require('./routes/admin');
+const apiRouter = require('./routes/api');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 function createApp() {
@@ -40,15 +42,15 @@ function createApp() {
     });
   });
 
+  // Serve the admin dashboard (attractive web UI) at the root.
+  app.use(express.static(path.join(__dirname, '..', 'public')));
   app.get('/', (_req, res) => {
-    res.json({
-      service: 'dental-booking-agent',
-      message: 'AI dental receptionist backend. See /health and POST /webhooks/vapi.',
-    });
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
   });
 
   app.use('/webhooks', webhookRouter);
   app.use('/admin', adminRouter);
+  app.use('/api', apiRouter);
 
   app.use(notFound);
   app.use(errorHandler);
