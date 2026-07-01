@@ -1,0 +1,15 @@
+{
+  "message": {
+    "type": "tool-calls",
+    "call": { "id": "call-demo-001", "customer": { "number": "+15551234567" } },
+    "toolCallList": [
+      {
+        "id": "toolcall-def456",
+        "function": {
+          "name": "confirm_booking",
+          "arguments": {}
+        }
+      }
+    ]
+  }
+}

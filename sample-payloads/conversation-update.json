@@ -1,0 +1,10 @@
+{
+  "message": {
+    "type": "conversation-update",
+    "call": { "id": "call-demo-001", "customer": { "number": "+15551234567" } },
+    "messages": [
+      { "role": "assistant", "message": "May I have your full name, please?" },
+      { "role": "user", "message": "Hi, my name is Priya Sharma" }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "message": {
+    "type": "end-of-call-report",
+    "call": { "id": "call-demo-001", "customer": { "number": "+15551234567" } },
+    "endedReason": "customer-ended-call",
+    "summary": "Patient Priya Sharma booked a cleaning for tomorrow at 3pm.",
+    "transcript": "AI: May I have your name?\nUser: Priya Sharma\nAI: What service?\nUser: A cleaning\nAI: When?\nUser: Tomorrow at 3pm\nAI: Confirmed!",
+    "messages": [
+      { "role": "user", "message": "Priya Sharma" },
+      { "role": "user", "message": "A cleaning" },
+      { "role": "user", "message": "Tomorrow at 3pm" },
+      { "role": "user", "message": "Yes" }
+    ]
+  }
+}

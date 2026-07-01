@@ -1,0 +1,15 @@
+{
+  "message": {
+    "type": "tool-calls",
+    "call": { "id": "call-demo-001", "customer": { "number": "+15551234567" } },
+    "toolCallList": [
+      {
+        "id": "toolcall-abc123",
+        "function": {
+          "name": "select_service",
+          "arguments": { "service": "cleaning" }
+        }
+      }
+    ]
+  }
+}
