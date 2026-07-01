@@ -5,15 +5,16 @@
  *
  * VAPI wraps every event as: { message: { type, call, ... } }
  * We route on `message.type`:
- *   - tool-calls          → run booking tools, return { results: [...] }
- *   - conversation-update → advance the state machine from the latest user turn
- *   - end-of-call-report  → archive the full transcript
- *   - assistant-request   → (optional) dynamic assistant routing
- *   - status-update       → acknowledged, no-op
+ *   - tool-calls          -> run booking tools, return { results: [...] }
+ *   - conversation-update -> advance the state machine from the latest user turn
+ *   - end-of-call-report  -> archive the full transcript
+ *   - assistant-request   -> (optional) dynamic assistant routing
+ *   - status-update       -> acknowledged, no-op
  *
  * Golden rule: ALWAYS respond HTTP 200 with a JSON body. A non-200 makes VAPI
  * retry or drop the call. Errors are caught and logged, never thrown to VAPI.
  *
+ * Envelope parsing lives in ../vapi/parse.js (pure + unit-tested).
  * Docs: https://docs.vapi.ai/server-url
  */
 
@@ -21,19 +22,18 @@ const express = require('express');
 const crypto = require('crypto');
 const conversation = require('../services/conversation');
 const firestore = require('../services/firestore');
+const parse = require('../vapi/parse');
 const { config } = require('../config');
 
 const router = express.Router();
 
 /**
- * Optional HMAC signature check. VAPI can send a secret header; if we have a
- * secret configured we verify it, otherwise we skip (documented corner cut).
+ * Optional HMAC / shared-secret signature check. If no secret is configured we
+ * skip verification (documented corner cut).
  */
 function verifySignature(req) {
-  if (!config.vapi.webhookSecret) return true; // verification disabled
-  const provided =
-    req.get('x-vapi-signature') || req.get('x-vapi-secret') || '';
-  // Support either a shared-secret match or an HMAC of the raw body.
+  if (!config.vapi.webhookSecret) return true;
+  const provided = req.get('x-vapi-signature') || req.get('x-vapi-secret') || '';
   if (provided === config.vapi.webhookSecret) return true;
   try {
     const hmac = crypto
@@ -46,48 +46,17 @@ function verifySignature(req) {
   }
 }
 
-function getCallId(message) {
-  return (
-    message?.call?.id ||
-    message?.callId ||
-    message?.call?.callId ||
-    null
-  );
-}
-
-function getPhone(message) {
-  return (
-    message?.call?.customer?.number ||
-    message?.customer?.number ||
-    message?.call?.from ||
-    null
-  );
-}
-
-// Pull the most recent *user* utterance out of a conversation-update payload.
-function latestUserText(message) {
-  const msgs = message?.messages || message?.conversation || message?.artifact?.messages || [];
-  for (let i = msgs.length - 1; i >= 0; i--) {
-    const m = msgs[i];
-    const role = m.role || m.type;
-    if (role === 'user') return m.message || m.content || m.text || '';
-  }
-  // Fall back to a flat transcript field if present.
-  return message?.transcript || message?.text || '';
-}
-
 router.post('/vapi', async (req, res) => {
-  // Never let anything throw past here — VAPI must always get a 200.
   try {
     if (!verifySignature(req)) {
       console.warn('[webhook] signature verification failed');
       return res.status(200).json({ error: 'invalid_signature' });
     }
 
-    const message = req.body?.message || req.body || {};
-    const type = message.type || 'unknown';
-    const callId = getCallId(message);
-    const phone = getPhone(message);
+    const message = parse.getMessage(req.body);
+    const type = parse.getType(message);
+    const callId = parse.getCallId(message);
+    const phone = parse.getPhone(message);
 
     console.log(`[webhook] type=${type} callId=${callId || 'n/a'}`);
 
@@ -97,7 +66,7 @@ router.post('/vapi', async (req, res) => {
 
       case 'conversation-update':
       case 'transcript': {
-        const userText = latestUserText(message);
+        const userText = parse.latestUserText(message);
         if (!callId) return res.status(200).json({ ok: true, note: 'no callId' });
         const result = await conversation.handleTurn({ callId, userInput: userText, phone });
         return res.status(200).json({ ok: true, reply: result.reply, stage: result.stage });
@@ -115,7 +84,6 @@ router.post('/vapi', async (req, res) => {
         return res.status(200).json({ ok: true });
 
       case 'assistant-request':
-        // Optional dynamic routing. Return an assistantId if you map numbers → clinics.
         return res.status(200).json({});
 
       case 'status-update':
@@ -128,33 +96,19 @@ router.post('/vapi', async (req, res) => {
         return res.status(200).json({ ok: true, note: `unhandled type ${type}` });
     }
   } catch (err) {
-    // Log loudly but still answer 200 so VAPI does not retry-storm.
     console.error('[webhook] handler error:', err.stack || err.message);
     return res.status(200).json({ ok: false, error: 'handler_error' });
   }
 });
 
 /**
- * Execute VAPI tool-calls and return results in the exact shape VAPI expects:
+ * Execute VAPI tool-calls, returning results in the exact shape VAPI expects:
  *   { results: [{ toolCallId, result }] }
  */
 async function handleToolCalls(message, { callId, phone }) {
-  const toolCalls =
-    message.toolCalls ||
-    message.toolCallList ||
-    message.tool_calls ||
-    [];
-
+  const calls = parse.extractToolCalls(message);
   const results = [];
-  for (const call of toolCalls) {
-    const toolCallId = call.id || call.toolCallId;
-    const fn = call.function || call;
-    const name = fn.name;
-    let args = fn.arguments || {};
-    if (typeof args === 'string') {
-      try { args = JSON.parse(args); } catch (_) { args = {}; }
-    }
-
+  for (const { toolCallId, name, args } of calls) {
     try {
       const outcome = await conversation.applyToolCall({ callId, tool: name, args, phone });
       results.push({
@@ -168,13 +122,9 @@ async function handleToolCalls(message, { callId, phone }) {
       });
     } catch (err) {
       console.error(`[webhook] tool ${name} failed:`, err.message);
-      results.push({
-        toolCallId,
-        result: JSON.stringify({ success: false, error: err.message }),
-      });
+      results.push({ toolCallId, result: JSON.stringify({ success: false, error: err.message }) });
     }
   }
-
   return { results };
 }
 
